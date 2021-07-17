@@ -64,6 +64,10 @@ public class SongAdapter extends BaseAdapter {
 
     }
 
+    public void setCurrentPlaying(){
+
+    }
+
     public class ViewHolder {
         TextView Name,Artist;
         ImageView SongImg;

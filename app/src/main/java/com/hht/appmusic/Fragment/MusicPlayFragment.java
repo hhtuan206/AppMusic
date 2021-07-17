@@ -12,7 +12,6 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -27,16 +26,17 @@ import java.text.SimpleDateFormat;
 
 import jp.wasabeef.glide.transformations.BlurTransformation;
 
-import static com.hht.appmusic.Constant.*;
 import static com.bumptech.glide.request.RequestOptions.bitmapTransform;
+import static com.hht.appmusic.Constant.DATE_FOMAT;
+import static com.hht.appmusic.Constant.PARCELABLE;
 
 public class MusicPlayFragment extends BottomSheetDialogFragment {
+    static Song song;
     TextView songName, songArtist, currentDuration, totalDuration;
     ImageView imgBackground, songArt;
     ImageButton btnRepeat, btnPrev, btnNext, btnPlayPause, btnShuffle;
     SeekBar songProgress;
     SimpleDateFormat simpleDateFormat = new SimpleDateFormat(DATE_FOMAT);
-    static Song song;
 
     public MusicPlayFragment() {
 
@@ -53,12 +53,19 @@ public class MusicPlayFragment extends BottomSheetDialogFragment {
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                currentDuration.setText(simpleDateFormat.format(PlayerManager.Instance().getCurrentPosition()));
-                songProgress.setProgress(PlayerManager.Instance().getCurrentPosition());
-                if (PlayerManager.Instance().onCompelete()) {
-                    ((MainActivity) getActivity()).nextMusic();
-                    dismiss();
+                try {
+                    currentDuration.setText(simpleDateFormat.format(PlayerManager.Instance().getCurrentPosition()));
+                    songProgress.setProgress(PlayerManager.Instance().getCurrentPosition());
+                    Log.e("", "" + PlayerManager.Instance().getMediaCompletetion());
+                    if (PlayerManager.Instance().getMediaCompletetion()) {
+                        dismiss();
+                        ((MainActivity) getActivity()).nextMusic();
+
+                    }
+                } catch (Exception e) {
+
                 }
+
                 handler.postDelayed(this, 500);
 
             }
@@ -77,7 +84,7 @@ public class MusicPlayFragment extends BottomSheetDialogFragment {
             PlayerManager.Instance().playMusic();
 
         }
-        if(song != null){
+        if (song != null) {
             initUI();
         }
 
@@ -92,7 +99,7 @@ public class MusicPlayFragment extends BottomSheetDialogFragment {
             @Override
             public void onClick(View v) {
                 ((MainActivity) getActivity()).nextMusic();
-                if(song != null){
+                if (song != null) {
                     initUI();
                 }
             }
@@ -102,7 +109,7 @@ public class MusicPlayFragment extends BottomSheetDialogFragment {
             @Override
             public void onClick(View v) {
                 ((MainActivity) getActivity()).prevMusic();
-                if(song != null){
+                if (song != null) {
                     initUI();
                 }
             }
@@ -127,6 +134,7 @@ public class MusicPlayFragment extends BottomSheetDialogFragment {
         return view;
     }
 
+
     private void initUI() {
         try {
             totalDuration.setText(simpleDateFormat.format(PlayerManager.Instance().getDuration()));
@@ -136,11 +144,11 @@ public class MusicPlayFragment extends BottomSheetDialogFragment {
             Glide.with(getContext())
                     .load(song.getImg())
                     .apply(bitmapTransform(new BlurTransformation(10))) // (change according to your wish)
-                    .error(R.drawable.cd)
+                    .error(R.drawable.background_default)
                     .into(imgBackground);
             Glide.with(getContext())
                     .load(song.getImg())
-                    .placeholder(R.drawable.cd)
+                    .placeholder(R.drawable.background_default)
                     .into(songArt);
         } catch (Exception e) {
             Log.e("fata", e.toString());
@@ -148,7 +156,7 @@ public class MusicPlayFragment extends BottomSheetDialogFragment {
         btnPlayPause.setImageResource(R.drawable.ic_controls_pause);
     }
 
-    public void playOrpause(){
+    public void playOrpause() {
         try {
             PlayerManager.Instance().playMusic();
             if (PlayerManager.Instance().getState()) {
@@ -181,6 +189,7 @@ public class MusicPlayFragment extends BottomSheetDialogFragment {
         PlayerManager.Instance().releaseMusic();
         PlayerManager.Instance().initMusic(context, song.getPath());
         PlayerManager.Instance().playMusic();
+
     }
 
 

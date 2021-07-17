@@ -12,7 +12,7 @@ import androidx.core.app.NotificationManagerCompat;
 
 import com.hht.appmusic.Model.Song;
 import com.hht.appmusic.R;
-import com.hht.appmusic.Service.NotificationActionService;
+import com.hht.appmusic.Service.NotificationActionReciver;
 
 import static com.hht.appmusic.Constant.*;
 
@@ -25,24 +25,20 @@ public class NotificationMusic {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(context);
             MediaSessionCompat mediaSessionCompat = new MediaSessionCompat(context, TAG_BROADCAST);
-            PendingIntent pendingIntentPre;
-            int drv_pre;
 
-            Intent intentPre = new Intent(context, NotificationActionService.class).setAction(ACTION_PRE);
-            pendingIntentPre = PendingIntent.getBroadcast(context, 0, intentPre, PendingIntent.FLAG_UPDATE_CURRENT);
+            int drv_pre;
+            Intent intentPre = new Intent(context, NotificationActionReciver.class).setAction(ACTION_PRE);
+            PendingIntent pendingIntentPre = PendingIntent.getBroadcast(context, 0, intentPre, PendingIntent.FLAG_UPDATE_CURRENT);
             drv_pre = R.drawable.ic_controls_prev;
 
 
-            Intent intentPlay = new Intent(context, NotificationActionService.class).setAction(ACTION_PLAY);
+            Intent intentPlay = new Intent(context, NotificationActionReciver.class).setAction(ACTION_PLAY);
             PendingIntent pendingIntentPlay = PendingIntent.getBroadcast(context, 0, intentPlay, PendingIntent.FLAG_UPDATE_CURRENT);
 
-            PendingIntent pendingIntentNext;
             int drv_next;
-
-            Intent intentNext = new Intent(context, NotificationActionService.class).setAction(ACTION_NEXT);
-            pendingIntentNext = PendingIntent.getBroadcast(context, 0, intentNext, PendingIntent.FLAG_UPDATE_CURRENT);
+            Intent intentNext = new Intent(context, NotificationActionReciver.class).setAction(ACTION_NEXT);
+            PendingIntent pendingIntentNext = PendingIntent.getBroadcast(context, 0, intentNext, PendingIntent.FLAG_UPDATE_CURRENT);
             drv_next = R.drawable.ic_controls_next;
-
 
             notification = new NotificationCompat.Builder(context, CHANEL_ID)
                     .setSmallIcon(R.drawable.cd)

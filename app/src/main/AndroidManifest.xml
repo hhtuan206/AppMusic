@@ -21,8 +21,8 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name="com.hht.appmusic.Service.NotificationActionService" />
-        <service android:name="com.hht.appmusic.Service.OnClearFromRecentService" />
+        <receiver android:name="com.hht.appmusic.Service.NotificationActionReciver" />
+        <service android:name="com.hht.appmusic.Service.NotificationMusicService" />
     </application>
 
 </manifest>

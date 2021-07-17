@@ -37,7 +37,7 @@ public class SongHelper {
                     byte[] embedPic = retriever.getEmbeddedPicture();
                     song.setImg(BitmapFactory.decodeByteArray(embedPic, 0, embedPic.length));
                 } else {
-                    song.setImg(BitmapFactory.decodeResource(context.getResources(), R.drawable.cd));
+                    song.setImg(BitmapFactory.decodeResource(context.getResources(), R.drawable.background_default));
                 }
                 songList.add(song);
             } while (cursor.moveToNext());

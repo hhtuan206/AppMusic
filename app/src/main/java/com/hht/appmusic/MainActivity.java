@@ -19,7 +19,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -29,10 +28,11 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.hht.appmusic.Adapter.SongAdapter;
 import com.hht.appmusic.Fragment.MusicPlayFragment;
 import com.hht.appmusic.Helper.SongHelper;
+import com.hht.appmusic.Helper.VersionHelper;
 import com.hht.appmusic.Model.Song;
 import com.hht.appmusic.Notification.NotificationMusic;
 import com.hht.appmusic.Player.PlayerManager;
-import com.hht.appmusic.Service.OnClearFromRecentService;
+import com.hht.appmusic.Service.NotificationMusicService;
 
 import java.util.ArrayList;
 
@@ -46,17 +46,19 @@ import static com.hht.appmusic.Constant.NOTIFICATION_NAME;
 import static com.hht.appmusic.Constant.PARCELABLE;
 import static com.hht.appmusic.Constant.REQUEST_STORAGE;
 
-public class MainActivity extends AppCompatActivity {
-    ListView lwSong;
-    ArrayList<Song> songs;
+
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, SwipeRefreshLayout.OnRefreshListener, AdapterView.OnItemClickListener {
+    ListView lvSong;
+    ArrayList<Song> songArrayList;
     SongAdapter songAdapter;
-    LinearLayout linearLayout;
-    TextView twMusic, twArtist;
+    LinearLayout llControl;
+    TextView tvMusic, tvArtist;
     ImageButton btnPlay, btnPre, btnNext;
-    ImageView imgMusic;
-    SwipeRefreshLayout swipeRefreshLayout;
+    ImageView ivMusic;
+    SwipeRefreshLayout srlListView;
     NotificationManager notificationManager;
-    int position;
+    MusicPlayFragment fragment = new MusicPlayFragment();
+    int position = 0;
 
     BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
@@ -85,83 +87,36 @@ public class MainActivity extends AppCompatActivity {
         init();
 
         try {
-            songs = SongHelper.getAllMusic(getApplicationContext());
+            songArrayList = SongHelper.getAllMusic(getApplicationContext());
             showData();
-        }catch (Exception e){
+        } catch (Exception e) {
             Toast.makeText(this, "Cần cấp quyền đọc", Toast.LENGTH_SHORT).show();
         }
-        linearLayout.setVisibility(View.GONE);
+        llControl.setVisibility(View.GONE);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            createChanel();
+        if (VersionHelper.isVersionQ()) {
+            createNotificationChanel();
             registerReceiver(receiver, new IntentFilter(KEY_BUNDLE));
-            startService(new Intent(getBaseContext(), OnClearFromRecentService.class)
+            startService(new Intent(getBaseContext(), NotificationMusicService.class)
             );
-
         }
 
         try {
-            setDataByPos(0);
-            linearLayout.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    MusicPlayFragment fragment = new MusicPlayFragment();
-                    fragment.show(getSupportFragmentManager(), fragment.getTag());
-
-                }
-            });
-
-            lwSong.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int pos, long id) {
-                    Bundle bundle = new Bundle();
-                    bundle.putParcelable(PARCELABLE, songs.get(pos));
-                    MusicPlayFragment fragment = new MusicPlayFragment();
-                    fragment.setArguments(bundle);
-                    ((MusicPlayFragment) fragment).callOnActivity(getApplicationContext());
-                    setDataByPos(pos);
-                    position = pos;
-                    linearLayout.setVisibility(View.VISIBLE);
-                    btnPlay.setImageResource(R.drawable.ic_controls_pause);
-                    NotificationMusic.notificationMusic(getApplicationContext(), songs.get(position), R.drawable.ic_controls_pause, position, songs.size() - 1);
-                }
-            });
+            setDataByPosition(0);
+            llControl.setOnClickListener(this);
+            lvSong.setOnItemClickListener(this);
 
         } catch (Exception e) {
             Toast.makeText(this, "Không có bài hát nào", Toast.LENGTH_SHORT).show();
         }
 
-        btnNext.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                nextMusic();
-            }
-        });
+        btnNext.setOnClickListener(this);
 
-        btnPre.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                prevMusic();
-            }
-        });
+        btnPre.setOnClickListener(this);
 
-        btnPlay.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                playMusic();
-            }
-        });
+        btnPlay.setOnClickListener(this);
 
-        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                songs.clear();
-                songs = SongHelper.getAllMusic(getApplicationContext());
-                showData();
-                swipeRefreshLayout.setRefreshing(false);
-            }
-        });
-
+        srlListView.setOnRefreshListener(this);
 
     }
 
@@ -172,98 +127,124 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void playMusic() {
-        MusicPlayFragment fragment = new MusicPlayFragment();
-        ((MusicPlayFragment) fragment).playOrpause();
+        fragment.playOrpause();
         if (PlayerManager.Instance().getState()) {
-            NotificationMusic.notificationMusic(MainActivity.this, songs.get(position), R.drawable.ic_controls_pause, position, songs.size() - 1);
+            NotificationMusic.notificationMusic(MainActivity.this, songArrayList.get(position), R.drawable.ic_controls_pause, position, songArrayList.size() - 1);
             btnPlay.setImageResource(R.drawable.ic_controls_pause);
         } else {
-            NotificationMusic.notificationMusic(MainActivity.this, songs.get(position), R.drawable.ic_controls_play, position, songs.size() - 1);
+            NotificationMusic.notificationMusic(MainActivity.this, songArrayList.get(position), R.drawable.ic_controls_play, position, songArrayList.size() - 1);
             btnPlay.setImageResource(R.drawable.ic_controls_play);
         }
     }
 
+
     public void nextMusic() {
-        if (position == songs.size() - 1) {
+        if (position == songArrayList.size() - 1) {
             position = 0;
-            NotificationMusic.notificationMusic(MainActivity.this, songs.get(position), R.drawable.ic_controls_pause, position, songs.size() - 1);
-            Bundle bundle = new Bundle();
-            bundle.putParcelable(PARCELABLE, songs.get(position));
-            MusicPlayFragment fragment = new MusicPlayFragment();
-            fragment.setArguments(bundle);
-            ((MusicPlayFragment) fragment).callOnActivity(getApplicationContext());
-            setDataByPos(position);
+            putDataIntoFragment();
         } else {
-            Bundle bundle = new Bundle();
-            bundle.putParcelable(PARCELABLE, songs.get(position + 1));
-            MusicPlayFragment fragment = new MusicPlayFragment();
-            fragment.setArguments(bundle);
-            ((MusicPlayFragment) fragment).callOnActivity(getApplicationContext());
-            setDataByPos(position + 1);
             position++;
-            NotificationMusic.notificationMusic(MainActivity.this, songs.get(position), R.drawable.ic_controls_pause, position, songs.size() - 1);
+            putDataIntoFragment();
         }
     }
 
     public void prevMusic() {
         if (position == 0) {
-            position = songs.size() - 1;
-            NotificationMusic.notificationMusic(MainActivity.this, songs.get(position), R.drawable.ic_controls_pause, position, songs.size() - 1);
-            Bundle bundle = new Bundle();
-            bundle.putParcelable(PARCELABLE, songs.get(position));
-            MusicPlayFragment fragment = new MusicPlayFragment();
-            fragment.setArguments(bundle);
-            ((MusicPlayFragment) fragment).callOnActivity(getApplicationContext());
-            setDataByPos(position);
+            position = songArrayList.size() - 1;
+            putDataIntoFragment();
         } else {
-            Bundle bundle = new Bundle();
-            bundle.putParcelable(PARCELABLE, songs.get(position));
-            MusicPlayFragment fragment = new MusicPlayFragment();
-            fragment.setArguments(bundle);
-            ((MusicPlayFragment) fragment).callOnActivity(getApplicationContext());
-            setDataByPos(position);
-            position--;
-            NotificationMusic.notificationMusic(MainActivity.this, songs.get(position), R.drawable.ic_controls_pause, position, songs.size() - 1);
+            --position;
+            putDataIntoFragment();
         }
     }
 
-    void setDataByPos(int pos) {
-        imgMusic.setImageBitmap(songs.get(pos).getImg());
-        twMusic.setText("" + songs.get(pos).getTitle());
-        twArtist.setText("" + songs.get(pos).getArtist());
+    void putDataIntoFragment() {
+        Bundle bundle = new Bundle();
+        bundle.putParcelable(PARCELABLE, songArrayList.get(position));
+        fragment.setArguments(bundle);
+        fragment.callOnActivity(getApplicationContext());
+        setDataByPosition(position);
+        NotificationMusic.notificationMusic(MainActivity.this, songArrayList.get(position), R.drawable.ic_controls_pause, position, songArrayList.size() - 1);
+    }
+
+    void setDataByPosition(int pos) {
+        ivMusic.setImageBitmap(songArrayList.get(pos).getImg());
+        tvMusic.setText("" + songArrayList.get(pos).getTitle());
+        tvArtist.setText("" + songArrayList.get(pos).getArtist());
 
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
-    void createChanel() {
-        NotificationChannel channel = new NotificationChannel(CHANEL_ID, NOTIFICATION_NAME, NotificationManager.IMPORTANCE_NONE);
-        channel.setVibrationPattern(new long[]{0});
+    void createNotificationChanel() {
+        NotificationChannel channel = new NotificationChannel(CHANEL_ID, NOTIFICATION_NAME, NotificationManager.IMPORTANCE_LOW);
+        channel.enableLights(false);
         channel.enableVibration(false);
+        channel.setShowBadge(false);
         notificationManager = getSystemService(NotificationManager.class);
         if (notificationManager != null) {
             notificationManager.createNotificationChannel(channel);
         }
     }
 
-
     public void showData() {
-        songAdapter = new SongAdapter(this, R.layout.custom_row, songs);
-        lwSong.setAdapter(songAdapter);
+        songAdapter = new SongAdapter(this, R.layout.custom_row, songArrayList);
+        lvSong.setAdapter(songAdapter);
     }
 
 
     void init() {
-        lwSong = findViewById(R.id.lwSong);
+        lvSong = findViewById(R.id.lwSong);
         btnNext = findViewById(R.id.btnNext);
         btnPlay = findViewById(R.id.btnPlay);
         btnPre = findViewById(R.id.btnPre);
-        imgMusic = findViewById(R.id.imgMusic);
-        twMusic = findViewById(R.id.twMusic);
-        twMusic.setSelected(true);
-        twArtist = findViewById(R.id.twAuthor);
-        linearLayout = findViewById(R.id.playercontrol);
-        swipeRefreshLayout = findViewById(R.id.swiperefresh);
+        ivMusic = findViewById(R.id.imgMusic);
+        tvMusic = findViewById(R.id.twMusic);
+        tvMusic.setSelected(true);
+        tvArtist = findViewById(R.id.twAuthor);
+        llControl = findViewById(R.id.player_control);
+        srlListView = findViewById(R.id.swiperefresh);
     }
 
 
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.btnNext:
+                nextMusic();
+                break;
+            case R.id.btnPlay:
+                playMusic();
+                break;
+            case R.id.btnPre:
+                prevMusic();
+                break;
+            case R.id.player_control:
+                MusicPlayFragment fragment = new MusicPlayFragment();
+                fragment.show(getSupportFragmentManager(), fragment.getTag());
+                break;
+        }
+    }
+
+    @Override
+    public void onRefresh() {
+        songArrayList.clear();
+        songArrayList = SongHelper.getAllMusic(getApplicationContext());
+        showData();
+        srlListView.setRefreshing(false);
+    }
+
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int pos, long id) {
+        Bundle bundle = new Bundle();
+        bundle.putParcelable(PARCELABLE, songArrayList.get(pos));
+        MusicPlayFragment fragment = new MusicPlayFragment();
+        fragment.setArguments(bundle);
+        fragment.callOnActivity(getApplicationContext());
+        setDataByPosition(pos);
+        position = pos;
+        llControl.setVisibility(View.VISIBLE);
+        btnPlay.setImageResource(R.drawable.ic_controls_pause);
+        NotificationMusic.notificationMusic(getApplicationContext(), songArrayList.get(position), R.drawable.ic_controls_pause, position, songArrayList.size() - 1);
+
+    }
 }

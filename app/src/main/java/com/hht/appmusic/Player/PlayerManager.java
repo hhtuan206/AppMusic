@@ -4,59 +4,69 @@ import android.content.Context;
 import android.media.MediaPlayer;
 import android.net.Uri;
 
-public class PlayerManager{
+import com.hht.appmusic.MainActivity;
+
+public class PlayerManager implements MediaPlayer.OnCompletionListener{
     private static PlayerManager _instance;
     private static MediaPlayer mediaPlayer;
-    public static PlayerManager Instance(){
-        if(_instance == null){
+    private boolean state;
+    public PlayerManager() {
+        if (mediaPlayer == null) {
+            mediaPlayer = new MediaPlayer();
+        }
+
+    }
+
+    public static PlayerManager Instance() {
+        if (_instance == null) {
             _instance = new PlayerManager();
         }
         return _instance;
     }
 
-    public PlayerManager() {
-        if(mediaPlayer == null){
-            mediaPlayer = new MediaPlayer();
-        }
-    }
-
-    public void initMusic(Context context,String uri){
+    public void initMusic(Context context, String uri) {
         mediaPlayer = MediaPlayer.create(context, Uri.parse(uri));
+        mediaPlayer.setOnCompletionListener(this);
+        mediaPlayer.setLooping(false);
+        state = false;
     }
 
-    public boolean onCompelete(){
-        return mediaPlayer.getCurrentPosition() == mediaPlayer.getDuration();
-    }
-
-    public void playMusic(){
-        if(mediaPlayer.isPlaying()){
+    public void playMusic() {
+        if (mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
-        }else {
+        } else {
             mediaPlayer.start();
         }
     }
 
-    public boolean getState(){
+    public boolean getState() {
         return mediaPlayer.isPlaying();
     }
 
-
-    public int getDuration(){
+    public int getDuration() {
         return mediaPlayer.getDuration();
     }
 
-    public int getCurrentPosition(){
+    public int getCurrentPosition() {
         return mediaPlayer.getCurrentPosition();
     }
 
-    public void seekMusic(int pos){
+    public void seekMusic(int pos) {
         mediaPlayer.seekTo(pos);
     }
 
-    public void releaseMusic(){
+    public void releaseMusic() {
         mediaPlayer.release();
         mediaPlayer = null;
     }
 
+    public boolean getMediaCompletetion() {
+        return state;
+    }
 
+    @Override
+    public void onCompletion(MediaPlayer mp) {
+        state = true;
+
+    }
 }
