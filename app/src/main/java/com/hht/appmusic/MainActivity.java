@@ -35,6 +35,7 @@ import com.hht.appmusic.Player.PlayerManager;
 import com.hht.appmusic.Service.NotificationMusicService;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 import static com.hht.appmusic.Constant.ACTION;
 import static com.hht.appmusic.Constant.ACTION_NEXT;
@@ -58,6 +59,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     SwipeRefreshLayout srlListView;
     NotificationManager notificationManager;
     MusicPlayFragment fragment = new MusicPlayFragment();
+    Random random;
     int position = 0;
 
     BroadcastReceiver receiver = new BroadcastReceiver() {
@@ -85,7 +87,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         permision();
         setContentView(R.layout.activity_main);
         init();
-
+        random = new Random();
         try {
             songArrayList = SongHelper.getAllMusic(getApplicationContext());
             showData();
@@ -126,7 +128,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+
+
     private void playMusic() {
+        MusicPlayFragment fragment = new MusicPlayFragment();
         fragment.playOrpause();
         if (PlayerManager.Instance().getState()) {
             NotificationMusic.notificationMusic(MainActivity.this, songArrayList.get(position), R.drawable.ic_controls_pause, position, songArrayList.size() - 1);
@@ -156,6 +161,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             --position;
             putDataIntoFragment();
         }
+    }
+
+    public void randomMusic(){
+        position = random.nextInt((songArrayList.size() - 0) + 1);
     }
 
     void putDataIntoFragment() {

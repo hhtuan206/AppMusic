@@ -11,6 +11,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -30,13 +31,14 @@ import static com.bumptech.glide.request.RequestOptions.bitmapTransform;
 import static com.hht.appmusic.Constant.DATE_FOMAT;
 import static com.hht.appmusic.Constant.PARCELABLE;
 
-public class MusicPlayFragment extends BottomSheetDialogFragment {
+public class MusicPlayFragment extends BottomSheetDialogFragment implements View.OnClickListener, SeekBar.OnSeekBarChangeListener {
     static Song song;
     TextView songName, songArtist, currentDuration, totalDuration;
     ImageView imgBackground, songArt;
     ImageButton btnRepeat, btnPrev, btnNext, btnPlayPause, btnShuffle;
     SeekBar songProgress;
     SimpleDateFormat simpleDateFormat = new SimpleDateFormat(DATE_FOMAT);
+    static boolean reapeat = false, shuffling = false;
 
     public MusicPlayFragment() {
 
@@ -58,14 +60,22 @@ public class MusicPlayFragment extends BottomSheetDialogFragment {
                     songProgress.setProgress(PlayerManager.Instance().getCurrentPosition());
                     Log.e("", "" + PlayerManager.Instance().getMediaCompletetion());
                     if (PlayerManager.Instance().getMediaCompletetion()) {
-                        dismiss();
-                        ((MainActivity) getActivity()).nextMusic();
-
+                        if (reapeat) {
+                            PlayerManager.Instance().repeat();
+                        } else {
+                            if (shuffling) {
+                                ((MainActivity) getActivity()).randomMusic();
+                                dismiss();
+                                ((MainActivity) getActivity()).nextMusic();
+                            } else {
+                                dismiss();
+                                ((MainActivity) getActivity()).nextMusic();
+                            }
+                        }
                     }
                 } catch (Exception e) {
-
+                    e.printStackTrace();
                 }
-
                 handler.postDelayed(this, 500);
 
             }
@@ -88,49 +98,18 @@ public class MusicPlayFragment extends BottomSheetDialogFragment {
             initUI();
         }
 
-        btnPlayPause.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                playOrpause();
-            }
-        });
+        btnShuffle.setOnClickListener(this);
 
-        btnNext.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ((MainActivity) getActivity()).nextMusic();
-                if (song != null) {
-                    initUI();
-                }
-            }
-        });
+        btnRepeat.setOnClickListener(this);
 
-        btnPrev.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ((MainActivity) getActivity()).prevMusic();
-                if (song != null) {
-                    initUI();
-                }
-            }
-        });
+        btnPlayPause.setOnClickListener(this);
 
-        songProgress.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+        btnNext.setOnClickListener(this);
 
-            }
+        btnPrev.setOnClickListener(this);
 
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
+        songProgress.setOnSeekBarChangeListener(this);
 
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                PlayerManager.Instance().seekMusic(seekBar.getProgress());
-            }
-        });
         return view;
     }
 
@@ -161,7 +140,6 @@ public class MusicPlayFragment extends BottomSheetDialogFragment {
             PlayerManager.Instance().playMusic();
             if (PlayerManager.Instance().getState()) {
                 btnPlayPause.setImageResource(R.drawable.ic_controls_pause);
-
             } else {
                 btnPlayPause.setImageResource(R.drawable.ic_controls_play);
             }
@@ -206,5 +184,67 @@ public class MusicPlayFragment extends BottomSheetDialogFragment {
         btnPrev = view.findViewById(R.id.control_prev);
         btnPlayPause = view.findViewById(R.id.control_play_pause);
         btnNext = view.findViewById(R.id.control_next);
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.control_next:
+                if(reapeat) return;
+                if(shuffling){
+                    ((MainActivity) getActivity()).randomMusic();
+                }
+                ((MainActivity) getActivity()).nextMusic();
+                if (song != null) {
+                    initUI();
+                }
+                break;
+            case R.id.control_prev:
+                if(reapeat) return;
+                if(shuffling){
+                    ((MainActivity) getActivity()).randomMusic();
+                }
+                ((MainActivity) getActivity()).prevMusic();
+                if (song != null) {
+                    initUI();
+                }
+                break;
+            case R.id.control_play_pause:
+                playOrpause();
+                break;
+            case R.id.control_repeat:
+                if (reapeat) {
+                    reapeat = false;
+                    btnRepeat.setImageResource(R.drawable.ic_controls_repeat);
+                } else {
+                    reapeat = true;
+                    btnRepeat.setImageResource(R.drawable.ic_controls_repeat_one);
+                }
+                break;
+            case R.id.control_shuffle:
+                if (shuffling) {
+                    shuffling = false;
+                    Toast.makeText(getContext(), "Random disable", Toast.LENGTH_SHORT).show();
+                } else {
+                    shuffling = true;
+                    Toast.makeText(getContext(), "Random enable", Toast.LENGTH_SHORT).show();
+                }
+                break;
+        }
+    }
+
+    @Override
+    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+
+    }
+
+    @Override
+    public void onStartTrackingTouch(SeekBar seekBar) {
+
+    }
+
+    @Override
+    public void onStopTrackingTouch(SeekBar seekBar) {
+        PlayerManager.Instance().seekMusic(seekBar.getProgress());
     }
 }

@@ -4,12 +4,11 @@ import android.content.Context;
 import android.media.MediaPlayer;
 import android.net.Uri;
 
-import com.hht.appmusic.MainActivity;
-
-public class PlayerManager implements MediaPlayer.OnCompletionListener{
+public class PlayerManager implements MediaPlayer.OnCompletionListener {
     private static PlayerManager _instance;
     private static MediaPlayer mediaPlayer;
     private boolean state;
+
     public PlayerManager() {
         if (mediaPlayer == null) {
             mediaPlayer = new MediaPlayer();
@@ -27,7 +26,6 @@ public class PlayerManager implements MediaPlayer.OnCompletionListener{
     public void initMusic(Context context, String uri) {
         mediaPlayer = MediaPlayer.create(context, Uri.parse(uri));
         mediaPlayer.setOnCompletionListener(this);
-        mediaPlayer.setLooping(false);
         state = false;
     }
 
@@ -60,13 +58,20 @@ public class PlayerManager implements MediaPlayer.OnCompletionListener{
         mediaPlayer = null;
     }
 
+    public void repeat() {
+        mediaPlayer.setLooping(true);
+    }
+
     public boolean getMediaCompletetion() {
         return state;
     }
 
     @Override
     public void onCompletion(MediaPlayer mp) {
-        state = true;
-
+        if(mediaPlayer.isLooping()){
+            state = false;
+        }else {
+            state = true;
+        }
     }
 }
