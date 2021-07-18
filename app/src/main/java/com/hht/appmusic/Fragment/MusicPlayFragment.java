@@ -38,7 +38,7 @@ public class MusicPlayFragment extends BottomSheetDialogFragment implements View
     ImageButton btnRepeat, btnPrev, btnNext, btnPlayPause, btnShuffle;
     SeekBar songProgress;
     SimpleDateFormat simpleDateFormat = new SimpleDateFormat(DATE_FOMAT);
-    static boolean reapeat = false, shuffling = false;
+    static boolean repeat = false, shuffling = false;
 
     public MusicPlayFragment() {
 
@@ -60,7 +60,7 @@ public class MusicPlayFragment extends BottomSheetDialogFragment implements View
                     songProgress.setProgress(PlayerManager.Instance().getCurrentPosition());
                     Log.e("", "" + PlayerManager.Instance().getMediaCompletetion());
                     if (PlayerManager.Instance().getMediaCompletetion()) {
-                        if (reapeat) {
+                        if (repeat) {
                             PlayerManager.Instance().repeat();
                         } else {
                             if (shuffling) {
@@ -190,7 +190,7 @@ public class MusicPlayFragment extends BottomSheetDialogFragment implements View
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.control_next:
-                if(reapeat) return;
+                if(repeat) return;
                 if(shuffling){
                     ((MainActivity) getActivity()).randomMusic();
                 }
@@ -200,7 +200,7 @@ public class MusicPlayFragment extends BottomSheetDialogFragment implements View
                 }
                 break;
             case R.id.control_prev:
-                if(reapeat) return;
+                if(repeat) return;
                 if(shuffling){
                     ((MainActivity) getActivity()).randomMusic();
                 }
@@ -213,11 +213,11 @@ public class MusicPlayFragment extends BottomSheetDialogFragment implements View
                 playOrpause();
                 break;
             case R.id.control_repeat:
-                if (reapeat) {
-                    reapeat = false;
+                if (repeat) {
+                    repeat = false;
                     btnRepeat.setImageResource(R.drawable.ic_controls_repeat);
                 } else {
-                    reapeat = true;
+                    repeat = true;
                     btnRepeat.setImageResource(R.drawable.ic_controls_repeat_one);
                 }
                 break;
